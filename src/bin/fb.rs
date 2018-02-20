@@ -196,11 +196,11 @@ fn main() {
     let mut decoder = GzDecoder::new(font_file);
     // the font vector contains all read informations
     let mut font = Vec::new();
-    decoder.read_to_end(&mut font);
+    decoder.read_to_end(&mut font).ok();
     let header = psf2_header::new(&font);
     // one should check the magic array which is returned: [114,181,74,134]
 
-    // create an glyph 2d array truncated to the first 128 chars; 32 is header offset
+    // create an glyph 2d array; 32 is header offset
     let mut glyphs: Vec<Vec<u8>> = vec![vec![0; header.glyph_size as usize]; header.glyph_count as usize];
     for nitem in 0..header.glyph_count {
         for size in 0..header.glyph_size {

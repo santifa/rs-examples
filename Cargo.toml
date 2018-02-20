@@ -1,9 +1,12 @@
 [package]
-name = "rfb"
+name = "rust-examples"
 version = "0.1.0"
+description = "Some simple programs written as demonstration in rust."
+repository = ""
 authors = ["Henrik Jürges <juerges.henrik@gmail.com>"]
 
 [dependencies]
+# framebuffer dependencies
 libc = "~0.2"
 chrono = "0.4"
 flate2 = { version = "1.0", features = ["zlib"], default-features = false }
