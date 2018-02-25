@@ -93,22 +93,20 @@ mod test {
         assert!(judgement(&baz), true);
 
         let sum = Type::sum(foo, bar);
-        assert!(judgement(&sum), true);
+        assert!(judgement(&sum));
 
         let fun = Type::fun(baz, Type::basic(Tag::Foo));
-        assert!(judgement(&fun), true);
+        assert!(judgement(&fun));
     }
 
     #[test]
     fn invalid_judgment() {
         let t = Type {tag: Tag::Fun, left: None, right: None};
-        assert!(judgement(&t), false);
-        // fails and panics at pattern matching, I'm in doubt if
-        // it is a bug in rust
+        assert_eq!(judgement(&t), false);
+
         let t = Type {tag: Tag::Fun,
-                      left: Some(Type::basic(Tag::Fun)),
-                      right: Some(Type::basic(Tag::Sum))};
-        // panics again
-        assert!(judgement(&t), false);
+                      left: Some(Box::new(Type::basic(Tag::Fun))),
+                      right: Some(Box::new(Type::basic(Tag::Sum)))};
+        assert_eq!(judgement(&t), false);
     }
 }
