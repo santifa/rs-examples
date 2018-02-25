@@ -19,3 +19,5 @@ The `chrono` crate for easy time handling, `flate2` for gzip support
 and `libc` for better ffi handling.
 
 [bp]: https://cmcenroe.me/2018/01/30/fbclock.html
+
+[type]: http://languagengine.co/blog/so-you-want-to-write-a-type-checker/

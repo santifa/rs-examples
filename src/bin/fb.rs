@@ -1,3 +1,6 @@
+//! fb.rs is a simple demonstration on how to
+//! use the linux framebuffer for a simple clock
+//! application.
 extern crate libc;
 extern crate chrono;
 extern crate flate2;
