@@ -6,7 +6,7 @@ use std::option::Option;
 /// information which type,
 /// type combination or context
 /// is under consideration.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 enum Tag {
     // base types
     Foo,
@@ -29,7 +29,7 @@ enum Tag {
 /// This generic struct represents
 /// plain types or combination of types
 /// for example the sum [A+B] or fun (A->B) type
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Type {
     tag: Tag,
     left: Option<Box<Type>>,
@@ -106,6 +106,7 @@ fn type_equality(a: &Type, b: &Type) -> bool {
 
 /// Context struct holds process information
 /// about the type checking process.
+#[derive(Debug, Clone)]
 struct Context {
     tag: Tag,
     rest: Option<Box<Context>>,
@@ -173,7 +174,7 @@ enum Term {
     Pair(Box<Term>, Box<Term>),
     Split(Box<Term>, String, Type, String, Type, Box<Term>),
     Lam(String, Box<Term>),
-    App(Box<Term>, String, Type),
+    App(Box<Term>, Box<Term>, Type),
     Var(String),
 }
 
@@ -197,69 +198,188 @@ fn var_has_type(v: &str, a: &Type, g: &Context) -> bool {
 }
 
 /// The real type checking process.
-fn judgment_check(g: Context, term: Term, t: Type) -> bool {
-    false
+fn judgment_check(g: &Context, term: &Term, t: &Type) -> bool {
+    match term {
+        &Term::Pair(ref fst, ref snd) if t.tag == Tag::Sum => {
+            judgment_check(g, fst, t.left.as_ref().unwrap())
+                && judgment_check(g, snd, t.right.as_ref().unwrap())
+        }
+        &Term::Split(ref pair, ref name_a, ref type_a, ref name_b, ref type_b, ref body) => {
+            let ctx = Context::snoc(
+                Context::snoc(g.clone(), name_a.clone(), type_a.clone()),
+                name_b.clone(),
+                type_b.clone(),
+            );
+            judgment_check(g, pair, &Type::sum(type_a.clone(), type_b.clone()))
+                && judgment_check(&ctx, body, t)
+        }
+        &Term::Lam(ref name, ref body) if t.tag == Tag::Fun => judgment_check(
+            &Context::snoc(g.clone(), name.clone(), *t.left.clone().unwrap()),
+            body,
+            t.right.as_ref().unwrap(),
+        ),
+        &Term::App(ref fun, ref arg, ref type_arg) => {
+            judgment_check(g, fun, &Type::fun(type_arg.clone(), t.clone()))
+                && judgment_check(g, arg, type_arg)
+        }
+        &Term::Var(ref name) => var_has_type(name, t, g),
+        _ => false,
+    }
 }
 
 fn main() {
-    /*
-     *  the identity function for foo
-     *  !- \x. x : Foo -> Foo
-     */
-    /*judgment_check(empty,
-                   lam("x",v("x")),
-                   arr(Foo,Foo));*/
+    // the identity function for foo
+    //  !- \x. x : Foo -> Foo
+    let ctx = Context::empty();
+    let term = Term::Lam("x".into(), Box::new(Term::Var("x".into())));
+    let t = Type::fun(Type::basic(Tag::Foo), Type::basic(Tag::Foo));
+    assert!(judgment_check(&ctx, &term, &t));
 
-    /*
-     * the fst function
-     * !- \p. split p as (x :: Foo, y :: Bar) in x : Foo*Bar -> Foo
-     */
-    /*judgment_check(empty,
-                   lam("p",split(v("p"),"x",Foo,"y",Bar,v("x"))),
-                   arr(prod(Foo,Bar),Foo));*/
+    // the fst function
+    // !- \p. split p as (x :: Foo, y :: Bar) in x : Foo*Bar -> Foo
+    let ctx = Context::empty();
+    let term = Term::Lam(
+        "p".into(),
+        Box::new(Term::Split(
+            Box::new(Term::Var("p".into())),
+            "x".into(),
+            Type::basic(Tag::Foo),
+            "y".into(),
+            Type::basic(Tag::Bar),
+            Box::new(Term::Var("x".into())),
+        )),
+    );
+    let t = Type::fun(
+        Type::sum(Type::basic(Tag::Foo), Type::basic(Tag::Bar)),
+        Type::basic(Tag::Foo),
+    );
+    assert!(judgment_check(&ctx, &term, &t));
 
-    /*
-     * the const function
-     * !- \x. \y. x : Foo -> Bar -> Foo
-     */
-    /*judgment_check(empty,
-                   lam("x", lam("y", v("x"))),
-                   arr(Foo, arr(Bar, Foo)));*/
+    // the const function
+    // !- \x. \y. x : Foo -> Bar -> Foo
+    let ctx = Context::empty();
+    let term = Term::Lam(
+        "x".into(),
+        Box::new(Term::Lam("y".into(), Box::new(Term::Var("x".into())))),
+    );
+    let t = Type::fun(
+        Type::basic(Tag::Foo),
+        Type::fun(Type::basic(Tag::Bar), Type::basic(Tag::Foo)),
+    );
+    assert!(judgment_check(&ctx, &term, &t));
 
-    /*
-     * the apply function
-     * !- \f. \x. f x : (Foo -> Bar) -> Foo -> Bar
-     */
-    /*judgment_check(empty,
-                   lam("f", lam("x", app(v("f"), v("x"), Foo))),
-                   arr(arr(Foo,Bar),arr(Foo,Bar)));*/
+    // the apply function
+    // !- \f. \x. f x : (Foo -> Bar) -> Foo -> Bar
+    let ctx = Context::empty();
+    let term = Term::Lam(
+        "f".into(),
+        Box::new(Term::Lam(
+            "x".into(),
+            Box::new(Term::App(
+                Box::new(Term::Var("f".into())),
+                Box::new(Term::Var("x".into())),
+                Type::basic(Tag::Foo),
+            )),
+        )),
+    );
+    let t = Type::fun(
+        Type::fun(Type::basic(Tag::Foo), Type::basic(Tag::Bar)),
+        Type::fun(Type::basic(Tag::Foo), Type::basic(Tag::Bar)),
+    );
+    assert!(judgment_check(&ctx, &term, &t));
 
-    /*
-     * the continuize function or reverse apply function
-     * !- \x. \f. f x : Foo -> (Foo -> Bar) -> Bar
-     */
-    /*judgment_check(empty,
-                   lam("x", lam("f", app(v("f"), v("x"), Foo))),
-                   arr(Foo, arr(arr(Foo,Bar),Bar)));*/
+    // the continuize function or reverse apply function
+    // !- \x. \f. f x : Foo -> (Foo -> Bar) -> Bar
+    let ctx = Context::empty();
+    let term = Term::Lam(
+        "x".into(),
+        Box::new(Term::Lam(
+            "f".into(),
+            Box::new(Term::App(
+                Box::new(Term::Var("f".into())),
+                Box::new(Term::Var("x".into())),
+                Type::basic(Tag::Foo),
+            )),
+        )),
+    );
+    let t = Type::fun(
+        Type::basic(Tag::Foo),
+        Type::fun(
+            Type::fun(Type::basic(Tag::Foo), Type::basic(Tag::Bar)),
+            Type::basic(Tag::Bar),
+        ),
+    );
+    assert!(judgment_check(&ctx, &term, &t));
 
-    /*
-     * currying
-     * !- \f. \x. \y. f (x,y) : (Foo*Bar -> Baz) -> Foo -> Bar -> Baz
-     */
-    /*judgment_check(empty,
-                   lam("f", lam("x", lam("y",
-                                         app(v("f"), pair(v("x"), v("y")), prod(Foo,Bar))))),
-                   arr(arr(prod(Foo,Bar),Baz), arr(Foo, arr(Bar, Baz))));*/
+    // currying
+    // !- \f. \x. \y. f (x,y) : (Foo*Bar -> Baz) -> Foo -> Bar -> Baz
+    let ctx = Context::empty();
+    let term = Term::Lam(
+        "f".into(),
+        Box::new(Term::Lam(
+            "x".into(),
+            Box::new(Term::Lam(
+                "y".into(),
+                Box::new(Term::App(
+                    Box::new(Term::Var("f".into())),
+                    Box::new(Term::Pair(
+                        Box::new(Term::Var("x".into())),
+                        Box::new(Term::Var("y".into())),
+                    )),
+                    Type::sum(Type::basic(Tag::Foo), Type::basic(Tag::Bar)),
+                )),
+            )),
+        )),
+    );
+    let t = Type::fun(
+        Type::fun(
+            Type::sum(Type::basic(Tag::Foo), Type::basic(Tag::Bar)),
+            Type::basic(Tag::Baz),
+        ),
+        Type::fun(
+            Type::basic(Tag::Foo),
+            Type::fun(Type::basic(Tag::Bar), Type::basic(Tag::Baz)),
+        ),
+    );
+    assert!(judgment_check(&ctx, &term, &t));
 
-    /*
-     * uncurrying
-     * !- \f. \p. split p as (x :: Foo, y :: Bar) in f x y
-     *  : (Foo -> Bar -> Baz) -> Foo*Bar -> Baz
-     */
-    /*judgment_check(empty,
-                   lam("f", lam("p", split(v("p"), "x", Foo, "y", Bar,
-                                           app(app(v("f"), v("x"), Foo), v("y"), Bar)))),
-                   arr(arr(Foo, arr(Bar, Baz)), arr(prod(Foo,Bar), Baz)));*/
+    // uncurrying
+    // !- \f. \p. split p as (x :: Foo, y :: Bar) in f x y
+    //  : (Foo -> Bar -> Baz) -> Foo*Bar -> Baz
+    let ctx = Context::empty();
+    let term = Term::Lam(
+        "f".into(),
+        Box::new(Term::Lam(
+            "p".into(),
+            Box::new(Term::Split(
+                Box::new(Term::Var("p".into())),
+                "x".into(),
+                Type::basic(Tag::Foo),
+                "y".into(),
+                Type::basic(Tag::Bar),
+                Box::new(Term::App(
+                    Box::new(Term::App(
+                        Box::new(Term::Var("f".into())),
+                        Box::new(Term::Var("x".into())),
+                        Type::basic(Tag::Foo),
+                    )),
+                    Box::new(Term::Var("y".into())),
+                    Type::basic(Tag::Bar),
+                )),
+            )),
+        )),
+    );
+    let t = Type::fun(
+        Type::fun(
+            Type::basic(Tag::Foo),
+            Type::fun(Type::basic(Tag::Bar), Type::basic(Tag::Baz)),
+        ),
+        Type::fun(
+            Type::sum(Type::basic(Tag::Foo), Type::basic(Tag::Bar)),
+            Type::basic(Tag::Baz),
+        ),
+    );
+    assert!(judgment_check(&ctx, &term, &t));
 }
 
 #[cfg(test)]
