@@ -5,7 +5,14 @@ These are mainly short programs I've written for myself by following
 some blog post or examing some piece of code. Maybe this is also
 usefull for for others.  
 
-Feel free to suggest changes or use the code for whatever you like.
+Run the examples with `cargo run --bin PROG` but the main methods
+are mostly demonstration and do not necessarily output anything useful.
+Read an play with the code to get insight on the example. If in doubt
+write a test for a specific function you want to explore and run with 
+`cargo test --bin PROG`. 
+
+Feel free to suggest changes or use the code for whatever you like 
+since it's under BSD 2-Clause License.
 
 # Framebuffer
 
@@ -17,6 +24,8 @@ It uses three crates to achive the same functionality.
 The `chrono` crate for easy time handling, `flate2` for gzip support
 (the fonts are compressed and the used zlib library doesn't work well through ffi)
 and `libc` for better ffi handling.
+
+[frame]: https://cmcenroe.me/2018/01/30/fbclock.html
 
 # Type checker
 
@@ -31,5 +40,8 @@ At the moment some comments are missing and the code is not very elegant
 modeled along-side the rust type system. This can be improved by using enums for
 types and contexts (maybe i have some spare time).
 
-[frame]: https://cmcenroe.me/2018/01/30/fbclock.html
 [type]: http://languagengine.co/blog/so-you-want-to-write-a-type-checker/
+
+# ML Classification
+
+[ml]: https://www.antoniomallia.it/lets-implement-a-gaussian-naive-bayes-classifier-in-python.html
