@@ -14,7 +14,7 @@ write a test for a specific function you want to explore and run with
 Feel free to suggest changes or use the code for whatever you like 
 since it's under BSD 2-Clause License.
 
-# Framebuffer
+## Framebuffer
 
 This is a small example on how-to utilize the framebuffer from
 rust. The application is modeled after this well written [blog post](frame)
@@ -27,7 +27,7 @@ and `libc` for better ffi handling.
 
 [frame]: https://cmcenroe.me/2018/01/30/fbclock.html
 
-# Type checker
+## Type checker
 
 A small type checker written after this [blog post](type). It models
 the basic function and sum type which can be used to type check some basic
@@ -36,12 +36,11 @@ a provided type (no type inference) and check if they match.
 A context can be used for more complex terms and if variable names are generated
 but this is not covered. 
 
-At the moment some comments are missing and the code is not very elegant
-modeled along-side the rust type system. This can be improved by using enums for
-types and contexts (maybe i have some spare time).
+At the moment some descriptions are missing and some points can be better modeled
+along-side the rust type system.
 
 [type]: http://languagengine.co/blog/so-you-want-to-write-a-type-checker/
 
-# ML Classification
+## ML Classification
 
 [ml]: https://www.antoniomallia.it/lets-implement-a-gaussian-naive-bayes-classifier-in-python.html

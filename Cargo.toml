@@ -5,6 +5,7 @@ description = "Some simple programs written as demonstration in rust."
 repository = "https://github.com/santifa/rs-examples.git"
 authors = ["Henrik Jürges <juerges.henrik@gmail.com>"]
 license-file = "LICENSE"
+publish = false
 
 [dependencies]
 # framebuffer dependencies
