@@ -43,4 +43,11 @@ along-side the rust type system.
 
 ## ML Classification
 
+A naive gaussian bayes classifier is demonstrated [here](ml). It runs on a
+glass dataset with two classifiers (glass or not). 
+
+At the moment the near copy of python code and panda magic produces to complex functions.
+It lacks some abstraction. The classifier should be a trait with default implementation
+and the underlying data structure should be an associated type.
+
 [ml]: https://www.antoniomallia.it/lets-implement-a-gaussian-naive-bayes-classifier-in-python.html

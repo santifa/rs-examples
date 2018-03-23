@@ -1,6 +1,6 @@
 //! type.rs is a sample typechecker
 //! written in rust.
-
+#![allow(dead_code)]
 /// This enum is either a basic type
 /// or a sum [a+b] and [i->o]
 #[derive(Debug, Clone)]
